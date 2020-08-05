@@ -17,6 +17,8 @@ from rl_algorithms.recurrent.utils import infer_leading_dims, restore_leading_di
 from rl_algorithms.registry import build_backbone, build_head
 from rl_algorithms.utils.config import ConfigDict
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 # TODO: Remove it when upgrade torch>=1.7
 # pylint: disable=abstract-method
@@ -42,6 +44,16 @@ class Brain(nn.Module):
         """Forward method implementation. Use in get_action method in agent."""
         x = self.backbone(x)
         x = self.head(x)
+
+        return x
+
+    def forward_feature(
+        self, x: torch.Tensor
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
+        """Forward method implementation. Use in get_action method in agent."""
+        x = torch.Tensor(x).float().to(device)
+        x = self.backbone(x)
+        x = self.head.forward_feature(x)
 
         return x
 
