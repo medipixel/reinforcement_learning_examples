@@ -92,11 +92,6 @@ class MLP(nn.Module):
 
         return x
 
-    def forward_feature(self, x: torch.Tensor) -> torch.Tensor:
-        for hidden_layer in self.hidden_layers:
-            x = self.hidden_activation(hidden_layer(x))
-        return x
-
 
 # TODO: Remove it when upgrade torch>=1.7
 # pylint: disable=abstract-method

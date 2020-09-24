@@ -47,16 +47,6 @@ class Brain(nn.Module):
 
         return x
 
-    def forward_feature(
-        self, x: torch.Tensor
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
-        """Forward method implementation. Use in get_action method in agent."""
-        x = torch.Tensor(x).float().to(device)
-        x = self.backbone(x)
-        x = self.head.forward_feature(x)
-
-        return x
-
     def forward_(self, x: torch.Tensor, n_tau_samples: int = None):
         """Get output value for calculating loss."""
         x = self.backbone(x)
