@@ -121,8 +121,8 @@ class Agent(ABC):
             saliency_map_dir = make_saliency_dir()
             print(f"Save saliency map in directory : {saliency_map_dir}")
             print(f"Saving saliency maps...")
-
             i = 0
+
         score_list = []
         for i_episode in range(test_num):
             state = self.env.reset()

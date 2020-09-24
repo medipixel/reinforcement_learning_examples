@@ -21,6 +21,7 @@ plt.rcParams["image.cmap"] = "gray"
 
 def make_saliency_dir():
     """Make directories for saving saliency map result."""
+
     date_time = datetime.now().strftime("%Y%m%d%H%M%S")
     os.makedirs(f"./data/saliency_map/{date_time}")
     os.makedirs(f"./data/saliency_map/{date_time}/input_image")
@@ -55,6 +56,7 @@ def compute_saliency_maps(X, y, model, device):
 
 
 def save_saliency_maps(i, X, y, model, device, saliency_map_dir):
+    """Make and save saliency maps in directory."""
 
     # Convert X and y from numpy arrays to Torch Tensors
     X_tensor = torch.Tensor(X).float().to(device).unsqueeze(0)
