@@ -7,7 +7,6 @@
 
 from abc import ABC, abstractmethod
 import argparse
-from datetime import datetime
 import os
 import shutil
 from typing import Tuple, Union
@@ -20,7 +19,7 @@ import torch
 import wandb
 
 from rl_algorithms.common.grad_cam import GradCAM
-from rl_algorithms.common.saliency_map import save_saliency_maps
+from rl_algorithms.common.saliency_map import make_saliency_dir, save_saliency_maps
 from rl_algorithms.utils.config import ConfigDict
 
 
@@ -119,13 +118,10 @@ class Agent(ABC):
             test_num = self.args.episode_num
 
         if self.args.save_saliency_map:
-            date_time = datetime.now().strftime("%Y%m%d%H%M%S")
-            os.makedirs(f"./data/saliency_map/{date_time}")
-            os.makedirs(f"./data/saliency_map/{date_time}/input_image")
-            os.makedirs(f"./data/saliency_map/{date_time}/state")
-            os.makedirs(f"./data/saliency_map/{date_time}/saliency")
-            os.makedirs(f"./data/saliency_map/{date_time}/overlay")
-            saliency_map_dir = f"./data/saliency_map/{date_time}/"
+            saliency_map_dir = make_saliency_dir()
+            print(f"Save saliency map in directory : {saliency_map_dir}")
+            print(f"Saving saliency maps...")
+
             i = 0
         score_list = []
         for i_episode in range(test_num):

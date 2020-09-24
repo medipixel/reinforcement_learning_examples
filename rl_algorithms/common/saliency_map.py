@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Abstract Agent used for all agents.
+"""Functions for Saliency map.
 
-- Author: Curt Park
-- Contact: curt.park@medipixel.io
+- Author: Euijin Jeong
+- Contact: euijin.jeong@medipixel.io
 """
 
+from datetime import datetime
+import os
 import pickle
 
 from PIL import Image
@@ -12,28 +14,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-SQUEEZENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-SQUEEZENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-
 plt.rcParams["figure.figsize"] = (10.0, 8.0)  # set default size of plots
 plt.rcParams["image.interpolation"] = "nearest"
 plt.rcParams["image.cmap"] = "gray"
 
 
+def make_saliency_dir():
+    """Make directories for saving saliency map result."""
+    date_time = datetime.now().strftime("%Y%m%d%H%M%S")
+    os.makedirs(f"./data/saliency_map/{date_time}")
+    os.makedirs(f"./data/saliency_map/{date_time}/input_image")
+    os.makedirs(f"./data/saliency_map/{date_time}/state")
+    os.makedirs(f"./data/saliency_map/{date_time}/saliency")
+    os.makedirs(f"./data/saliency_map/{date_time}/overlay")
+    saliency_map_dir = f"./data/saliency_map/{date_time}/"
+    return saliency_map_dir
+
+
 def compute_saliency_maps(X, y, model, device):
-    """
-    Compute a class saliency map using the model for images X and labels y.
+    """Compute a class saliency map using the model for images X and labels y."""
 
-    Input:
-    - X: Input images; Tensor of shape (N, 3, H, W)
-    - y: Labels for X; LongTensor of shape (N,)
-    - model: A pretrained CNN that will be used to compute the saliency map.
-
-    Returns:
-    - saliency: A Tensor of shape (N, H, W) giving the saliency maps for the input
-    images.
-    """
-    # Make sure the model is in "test" mode
     model.eval()
 
     # Make input tensor require gradient
@@ -46,7 +46,7 @@ def compute_saliency_maps(X, y, model, device):
     scores = (scores.gather(1, y.unsqueeze(0))).squeeze(0)
 
     # backward pass
-    scores.backward(torch.FloatTensor([1.0] * 1).to(device))
+    scores.backward(torch.FloatTensor([1.0]).to(device))
 
     # saliency
     saliency, _ = torch.max(X.grad.data.abs(), dim=1)
@@ -63,8 +63,6 @@ def save_saliency_maps(i, X, y, model, device, saliency_map_dir):
 
     # Compute saliency maps for images in X
     saliency = compute_saliency_maps(X_tensor, y_tensor, model, device)
-
-    # and saliency maps together.
 
     # image
     saliency = saliency.cpu().numpy()
@@ -85,5 +83,3 @@ def save_saliency_maps(i, X, y, model, device, saliency_map_dir):
 
     overlay = Image.blend(input_image.convert("RGBA"), saliency, alpha=0.5)
     overlay.save(saliency_map_dir + "/overlay/{}.png".format(i))
-
-    print(i)
