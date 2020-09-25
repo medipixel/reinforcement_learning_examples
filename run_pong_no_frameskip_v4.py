@@ -105,6 +105,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="turn off framestack",
     )
+
     return parser.parse_args()
 
 
