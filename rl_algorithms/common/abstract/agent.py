@@ -117,9 +117,9 @@ class Agent(ABC):
             test_num = self.args.episode_num
 
         if self.args.save_saliency_map:
-            saliency_map_dir = make_saliency_dir()
+            saliency_map_dir = make_saliency_dir(self.args.load_from.split("/")[-2])
             print(f"Save saliency map in directory : {saliency_map_dir}")
-            print(f"Saving saliency maps...")
+            print("Saving saliency maps...")
             i = 0
 
         score_list = []

@@ -5,7 +5,6 @@
 - Contact: euijin.jeong@medipixel.io
 """
 
-from datetime import datetime
 import os
 import pickle
 
@@ -19,10 +18,9 @@ plt.rcParams["image.interpolation"] = "nearest"
 plt.rcParams["image.cmap"] = "gray"
 
 
-def make_saliency_dir():
+def make_saliency_dir(date_time: str) -> str:
     """Make directories for saving saliency map result."""
 
-    date_time = datetime.now().strftime("%Y%m%d%H%M%S")
     os.makedirs(f"./data/saliency_map/{date_time}")
     os.makedirs(f"./data/saliency_map/{date_time}/input_image")
     os.makedirs(f"./data/saliency_map/{date_time}/state")
