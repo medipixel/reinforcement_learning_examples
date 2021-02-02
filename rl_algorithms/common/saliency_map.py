@@ -41,29 +41,20 @@ def compute_saliency_maps(X, y, model, device):
         input_list = []
         for x in X:
             input_list.append(x.requires_grad_())
+
         saliency = None
-        # forward pass
         X = input_list
         scores, _ = model(X[0], X[1], X[2], X[3])
         scores = (scores.gather(1, y.unsqueeze(0))).squeeze(0)
-
-        # backward pass
         scores.backward(torch.FloatTensor([1.0]).to(device))
-
-        # saliency
         saliency, _ = torch.max(X[0].grad.data.abs(), dim=1)
-        saliency = torch.trans
     else:
         X.requires_grad_()
+
         saliency = None
-        # forward pass
         scores = model(X)
         scores = (scores.gather(1, y.unsqueeze(0))).squeeze(0)
-
-        # backward pass
         scores.backward(torch.FloatTensor([1.0]).to(device))
-
-        # saliency
         saliency, _ = torch.max(X.grad.data.abs(), dim=1)
 
     return saliency
