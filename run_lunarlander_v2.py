@@ -106,12 +106,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--student", dest="student", action="store_true", help="train student",
     )
-    parser.add_argument(
-        "--save-saliency-map",
-        dest="save_saliency_map",
-        action="store_true",
-        help="turn off framestack",
-    )
 
     return parser.parse_args()
 
@@ -119,8 +113,6 @@ def parse_args() -> argparse.Namespace:
 def main():
     """Main."""
     args = parse_args()
-
-    assert not args.save_saliency_map, "Lunarlander doesn't support saliency map."
 
     # env initialization
     env_name = "LunarLander-v2"
