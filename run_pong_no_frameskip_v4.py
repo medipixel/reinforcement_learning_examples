@@ -100,10 +100,7 @@ def parse_args() -> argparse.Namespace:
         "--student", dest="student", action="store_true", help="train student",
     )
     parser.add_argument(
-        "--save-saliency-map",
-        dest="save_saliency_map",
-        action="store_true",
-        help="save saliency map",
+        "--saliency-map", action="store_true", help="save saliency map",
     )
 
     return parser.parse_args()
@@ -147,7 +144,7 @@ def main():
         agent.train()
     elif args.test and args.grad_cam:
         agent.test_with_gradcam()
-    elif args.test and args.save_saliency_map:
+    elif args.test and args.saliency_map:
         agent.test_with_saliency_map()
     else:
         agent.test()

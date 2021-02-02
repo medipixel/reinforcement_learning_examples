@@ -84,8 +84,6 @@ def main():
     """Main."""
     args = parse_args()
 
-    assert not args.save_saliency_map, "Lunarlander doesn't support saliency map."
-
     # env initialization
     env_name = "LunarLanderContinuous-v2"
     env = gym.make(env_name)
