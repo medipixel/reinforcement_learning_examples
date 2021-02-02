@@ -116,12 +116,6 @@ class Agent(ABC):
         else:
             test_num = self.args.episode_num
 
-        if self.args.save_saliency_map:
-            saliency_map_dir = make_saliency_dir(self.args.load_from.split("/")[-2])
-            print(f"Save saliency map in directory : {saliency_map_dir}")
-            print("Saving saliency maps...")
-            i = 0
-
         score_list = []
         for i_episode in range(test_num):
             state = self.env.reset()
@@ -134,18 +128,6 @@ class Agent(ABC):
                     self.env.render()
 
                 action = self.select_action(state)
-                if self.args.save_saliency_map:
-                    for param in self.learner.dqn.parameters():
-                        param.requires_grad = False
-                    save_saliency_maps(
-                        i,
-                        state,
-                        action,
-                        self.learner.dqn,
-                        self.learner.device,
-                        saliency_map_dir,
-                    )
-                    i += 1
                 next_state, reward, done, _ = self.step(action)
 
                 state = next_state
@@ -212,6 +194,80 @@ class Agent(ABC):
                         if result_images is None
                         else np.vstack([result_images, result])
                     )
+                # Show action on result image
+                cv2.putText(
+                    img=result_images,
+                    text=f"action: {action}",
+                    org=(50, 50),
+                    fontFace=cv2.FONT_HERSHEY_PLAIN,
+                    fontScale=1,
+                    color=(0, 0, 255),
+                    thickness=2,
+                )
+
+                cv2.imshow("result", result_images)
+                key = cv2.waitKey(0)
+                if key == 27 & 0xFF:  # ESC key
+                    cv2.destroyAllWindows()
+                    break
+
+                state = next_state
+                score += reward
+                step += 1
+
+            print(
+                "[INFO] test %d\tstep: %d\ttotal score: %d" % (i_episode, step, score)
+            )
+            if key == 27 & 0xFF:  # ESC key
+                break
+
+    def test_with_saliency_map(self):
+        """Test agent with saliency map."""
+        saliency_map_dir = make_saliency_dir(self.args.load_from.split("/")[-2])
+        print(f"Save saliency map in directory : {saliency_map_dir}")
+        print("Saving saliency maps...")
+        i = 0
+        for i_episode in range(self.args.episode_num):
+            state = self.env.reset()
+            done = False
+            score = 0
+            step = 0
+
+            key = 0
+            print("\nPress Any Key to move to next step... (quit: ESC key)")
+            while not done:
+                action = self.select_action(state)
+                for param in self.learner.dqn.parameters():
+                    param.requires_grad = False
+                saliency_map = save_saliency_maps(
+                    i,
+                    state,
+                    action,
+                    self.learner.dqn,
+                    self.learner.device,
+                    saliency_map_dir,
+                )
+                i += 1
+                next_state, reward, done, _ = self.step(action)
+
+                state = np.transpose(state[-1])
+                state = cv2.cvtColor(state, cv2.COLOR_GRAY2BGR)
+                state = cv2.resize(state, (150, 150), interpolation=cv2.INTER_LINEAR)
+
+                # Get Grad-CAM image
+                result_images = None
+                saliency_map = np.asarray(saliency_map)
+                saliency_map = cv2.resize(
+                    saliency_map, (150, 150), interpolation=cv2.INTER_LINEAR
+                )
+                saliency_map = cv2.cvtColor(saliency_map, cv2.COLOR_RGBA2BGR)
+                overlay = cv2.addWeighted(state, 1.0, saliency_map, 0.5, 0)
+                result = np.hstack([state, saliency_map, overlay])
+                result_images = (
+                    result
+                    if result_images is None
+                    else np.vstack([result_images, result])
+                )
                 # Show action on result image
                 cv2.putText(
                     img=result_images,

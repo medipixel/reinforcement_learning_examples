@@ -103,7 +103,7 @@ def parse_args() -> argparse.Namespace:
         "--save-saliency-map",
         dest="save_saliency_map",
         action="store_true",
-        help="turn off framestack",
+        help="save saliency map",
     )
 
     return parser.parse_args()
@@ -147,6 +147,8 @@ def main():
         agent.train()
     elif args.test and args.grad_cam:
         agent.test_with_gradcam()
+    elif args.test and args.save_saliency_map:
+        agent.test_with_saliency_map()
     else:
         agent.test()
 

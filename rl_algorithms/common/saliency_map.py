@@ -7,6 +7,7 @@
 
 import os
 import pickle
+import shutil
 
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -20,8 +21,10 @@ plt.rcParams["image.cmap"] = "gray"
 
 def make_saliency_dir(date_time: str) -> str:
     """Make directories for saving saliency map result."""
-
-    os.makedirs(f"./data/saliency_map/{date_time}")
+    save_dir = f"./data/saliency_map/{date_time}"
+    if os.path.exists(save_dir):
+        shutil.rmtree(save_dir)
+    os.makedirs(save_dir)
     os.makedirs(f"./data/saliency_map/{date_time}/input_image")
     os.makedirs(f"./data/saliency_map/{date_time}/state")
     os.makedirs(f"./data/saliency_map/{date_time}/saliency")
@@ -33,22 +36,35 @@ def make_saliency_dir(date_time: str) -> str:
 def compute_saliency_maps(X, y, model, device):
     """Compute a class saliency map using the model for images X and labels y."""
 
-    model.eval()
-
     # Make input tensor require gradient
-    X.requires_grad_()
+    if isinstance(X, list):  # For R2D1
+        input_list = []
+        for x in X:
+            input_list.append(x.requires_grad_())
+        saliency = None
+        # forward pass
+        X = input_list
+        scores, _ = model(X[0], X[1], X[2], X[3])
+        scores = (scores.gather(1, y.unsqueeze(0))).squeeze(0)
 
-    saliency = None
+        # backward pass
+        scores.backward(torch.FloatTensor([1.0]).to(device))
 
-    # forward pass
-    scores = model(X)
-    scores = (scores.gather(1, y.unsqueeze(0))).squeeze(0)
+        # saliency
+        saliency, _ = torch.max(X[0].grad.data.abs(), dim=1)
+        saliency = torch.trans
+    else:
+        X.requires_grad_()
+        saliency = None
+        # forward pass
+        scores = model(X)
+        scores = (scores.gather(1, y.unsqueeze(0))).squeeze(0)
 
-    # backward pass
-    scores.backward(torch.FloatTensor([1.0]).to(device))
+        # backward pass
+        scores.backward(torch.FloatTensor([1.0]).to(device))
 
-    # saliency
-    saliency, _ = torch.max(X.grad.data.abs(), dim=1)
+        # saliency
+        saliency, _ = torch.max(X.grad.data.abs(), dim=1)
 
     return saliency
 
@@ -57,7 +73,17 @@ def save_saliency_maps(i, X, y, model, device, saliency_map_dir):
     """Make and save saliency maps in directory."""
 
     # Convert X and y from numpy arrays to Torch Tensors
-    X_tensor = torch.Tensor(X).float().to(device).unsqueeze(0)
+    if isinstance(X, tuple):  # For R2D1
+        input_image = X[0][-1]
+        X_tensor = []
+        for x in X:
+            if not isinstance(x, torch.Tensor):
+                X_tensor.append(torch.Tensor(x).float().to(device).unsqueeze(0))
+            else:
+                X_tensor.append(x)
+    else:
+        input_image = X[-1]
+        X_tensor = torch.Tensor(X).float().to(device).unsqueeze(0)
     y = int(y)
     y_tensor = torch.LongTensor([y]).to(device)
 
@@ -66,7 +92,8 @@ def save_saliency_maps(i, X, y, model, device, saliency_map_dir):
 
     # image
     saliency = saliency.cpu().numpy()
-    input_image = np.rot90(X[-1], 3)
+    saliency = np.flip(saliency, axis=1)
+    input_image = np.rot90(input_image, 3)
     input_image = Image.fromarray(np.uint8(input_image * 255.0))
     input_image.save(saliency_map_dir + "/input_image/{}.png".format(i))
 
@@ -83,3 +110,4 @@ def save_saliency_maps(i, X, y, model, device, saliency_map_dir):
 
     overlay = Image.blend(input_image.convert("RGBA"), saliency, alpha=0.5)
     overlay.save(saliency_map_dir + "/overlay/{}.png".format(i))
+    return saliency
